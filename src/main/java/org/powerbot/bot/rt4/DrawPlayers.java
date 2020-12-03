@@ -17,6 +17,7 @@ public class DrawPlayers extends ClientAccessor implements PaintListener {
 		if (ctx.game.clientState() != Constants.GAME_LOADED) {
 			return;
 		}
+		final Player me = ctx.players.local();;
 		final FontMetrics metrics = render.getFontMetrics();
 		for (final Player player : ctx.players.select()) {
 			try {
@@ -26,6 +27,10 @@ public class DrawPlayers extends ClientAccessor implements PaintListener {
 				final Point location = player.centerPoint();
 				if (location.x == -1 || location.y == -1) {
 					continue;
+				}
+				final Polygon hull = player.hull();
+				if (hull != null) {
+					render.drawPolygon(hull);
 				}
 
 				render.setColor(Color.RED);

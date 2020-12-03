@@ -1,6 +1,7 @@
 package org.powerbot.script;
 
 import org.powerbot.bot.*;
+import org.powerbot.script.rt4.Player;
 import org.powerbot.util.HttpUtils;
 import org.powerbot.util.ScriptBundle;
 
@@ -88,7 +89,7 @@ public abstract class AbstractScript<C extends ClientContext> implements Script 
 
 		dir = new File(new File(System.getProperty("java.io.tmpdir"), ContextClassLoader.class.getAnnotation(Script.Manifest.class).name()), id);
 		if (!dir.isDirectory()) {
-			if (!dir.mkdirs()) {
+			if (!dir.exists() && !dir.mkdirs()) {
 				log.warning("Failed to make directory: " + dir.getAbsolutePath());
 			}
 		}
@@ -111,7 +112,7 @@ public abstract class AbstractScript<C extends ClientContext> implements Script 
 				}
 			} else {
 				if (!dir.isDirectory()) {
-					if (!dir.mkdirs()) {
+					if (!dir.exists() && !dir.mkdirs()) {
 						log.warning("Failed to make directory: " + dir.getAbsolutePath());
 					}
 				}
@@ -161,7 +162,7 @@ public abstract class AbstractScript<C extends ClientContext> implements Script 
 	 */
 	public File getStorageDirectory() {
 		if (!dir.isDirectory()) {
-			if (!dir.mkdirs()) {
+			if (!dir.exists() && !dir.mkdirs()) {
 				log.warning("Failed to make directory: " + dir.getAbsolutePath());
 			}
 		}
@@ -225,7 +226,7 @@ public abstract class AbstractScript<C extends ClientContext> implements Script 
 
 		final File p = f.getParentFile();
 		if (p != null) {
-			if (!p.mkdirs()) {
+			if (!p.exists() && !p.mkdirs()) {
 				log.warning("Failed to make directory: " + p.getAbsolutePath());
 			}
 		}
@@ -318,6 +319,21 @@ public abstract class AbstractScript<C extends ClientContext> implements Script 
 				ctx.bot().openURL(url);
 				return;
 			}
+		}
+	}
+
+	/**
+	 * Called if the user specified run duration has been reached, triggerig {@link Script.State#STOP} if true is returned.
+	 * @return true if script can safely be stopped
+	 */
+	public boolean canBreak() {
+		if (ctx instanceof org.powerbot.script.rt4.ClientContext) {
+			final org.powerbot.script.rt4.ClientContext rt4ctx = (org.powerbot.script.rt4.ClientContext) ctx;
+			final Player p = rt4ctx.players.local();
+
+			return (rt4ctx.npcs.select().within(5d).select(npc -> npc.interacting().equals(p) && npc.healthBarVisible()).isEmpty()) && !p.healthBarVisible();
+		} else {
+			return false;
 		}
 	}
 

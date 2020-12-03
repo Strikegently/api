@@ -8,9 +8,9 @@ import org.powerbot.script.rt4.ClientContext
 import org.powerbot.script.rt4.Model
 import java.util.concurrent.ConcurrentHashMap
 
-data class TimedModelWrapper(var model: Model?, var animated: Boolean, var mirror: Boolean, var lastRequestTime: Long)
+data class TimedModelWrapper(var model: Model?, var animated: Boolean, var lastRequestTime: Long)
 
-class ModelCache(val ctx: ClientContext) : ModelRenderListener {
+class ModelCache() : ModelRenderListener {
 
     val cache = ConcurrentHashMap<IRenderable, TimedModelWrapper>()
 
@@ -31,22 +31,45 @@ class ModelCache(val ctx: ClientContext) : ModelRenderListener {
         }
     }
 
-    fun getModel(renderable: IRenderable, animated: Boolean, mirror: Boolean): Model? {
-        val wrapper = cache[renderable] ?: TimedModelWrapper(null, animated, mirror, System.currentTimeMillis())
-        wrapper.lastRequestTime = System.currentTimeMillis()
+    fun getModel(ctx: ClientContext, renderable: IRenderable?, animated: Boolean): Model? {
+        if (renderable == null) {
+            return null
+        }
 
-        cache.put(renderable, wrapper)
+        val model = if (cache.containsKey(renderable)) {
+            val wrapper = cache[renderable]
+            wrapper?.lastRequestTime = System.currentTimeMillis()
 
-        return wrapper.model
+            wrapper?.model
+        } else {
+
+            val wrapper = TimedModelWrapper(null, animated, System.currentTimeMillis())
+
+            cache.put(renderable, wrapper)
+
+            wrapper.model
+        }
+
+        if (model != null) {
+            model.setContext(ctx)
+            return model
+        }
+
+        return null
     }
 
-    override fun onRender(renderable: IRenderable, verticesX: IntArray?, verticesY: IntArray?, verticesZ: IntArray?, indicesX: IntArray?, indicesY: IntArray?, indicesZ: IntArray?) {
+    override fun onRender(renderable: IRenderable, verticesX: IntArray?, verticesY: IntArray?,
+                          verticesZ: IntArray?, indicesX: IntArray?, indicesY: IntArray?, indicesZ: IntArray?, orientation: Int) {
+        if (verticesX == null || verticesX.isEmpty()) {
+            return
+        }
+
         val wrapper = cache[renderable]
         if (wrapper != null && (wrapper.model == null || wrapper.animated)) {
             wrapper.model = if (wrapper.model != null)
-                wrapper.model!!.update(verticesX, verticesY, verticesZ, indicesX, indicesY, indicesZ, wrapper.mirror)
+                wrapper.model!!.update(verticesX, verticesY, verticesZ, indicesX, indicesY, indicesZ, orientation)
             else
-                Model(ctx, verticesX, verticesY, verticesZ, indicesX, indicesY, indicesZ, wrapper.mirror)
+                Model(verticesX, verticesY, verticesZ, indicesX, indicesY, indicesZ, orientation)
         }
     }
 }

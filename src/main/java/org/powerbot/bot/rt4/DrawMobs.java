@@ -1,8 +1,6 @@
 package org.powerbot.bot.rt4;
 
-import org.powerbot.script.*;
-import org.powerbot.script.rt4.ClientAccessor;
-import org.powerbot.script.rt4.ClientContext;
+import org.powerbot.script.PaintListener;
 import org.powerbot.script.rt4.*;
 
 import java.awt.*;
@@ -29,9 +27,18 @@ public class DrawMobs extends ClientAccessor implements PaintListener {
 			if (location.x == -1 || location.y == -1) {
 				continue;
 			}
+			final Polygon hull = npc.hull();
+			if (hull != null) {
+				render.drawPolygon(hull);
+			}
+
 			render.setColor(Color.red);
 			render.fillRect((int) location.getX() - 1, (int) location.getY() - 1, 2, 2);
 			String s = npc.name() + " (" + npc.combatLevel() + " [" + npc.health() + "]) - " + npc.id();
+
+			Point centerPoint = npc.centerPoint();
+			s += " " + centerPoint.x + ", " + centerPoint.y;
+
 			render.setColor(npc.inCombat() ? Color.RED : npc.inMotion() ? Color.GREEN : Color.WHITE);
 			render.drawString(s, location.x - metrics.stringWidth(s) / 2, location.y - metrics.getHeight() / 2);
 			final String msg = npc.overheadMessage();

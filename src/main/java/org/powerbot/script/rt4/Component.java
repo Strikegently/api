@@ -2,11 +2,10 @@ package org.powerbot.script.rt4;
 
 import org.powerbot.bot.rt4.HashTable;
 import org.powerbot.bot.rt4.client.Client;
-import org.powerbot.bot.rt4.client.WidgetNode;
+import org.powerbot.bot.rt4.client.internal.IWidgetNode;
 import org.powerbot.script.Calculations;
 
 import java.awt.*;
-import java.util.Arrays;
 
 /**
  * Component
@@ -64,7 +63,7 @@ public class Component extends Interactive {
 		int x = widget.getX(), y = widget.getY();
 		if (parentId != -1) {
 			final Component parent = ctx.widgets.component(parentId >> 16, parentId & 0xffff);
-			if (parent != null ) {
+			if (parent != null) {
 				final Point p = parent.screenPoint();
 				x += p.x - parent.scrollX();
 				y += p.y - parent.scrollY();
@@ -74,7 +73,10 @@ public class Component extends Interactive {
 			final int[] boundsX = client.getWidgetBoundsX();
 			final int[] boundsY = client.getWidgetBoundsY();
 			if (index >= 0 && boundsX.length > index && boundsX[index] >= 0 && boundsY.length > index && boundsY[index] >= 0) {
-				return new Point(boundsX[index], boundsY[index]);
+				return new Point(
+					boundsX[index] + (type() > 0 ? relativeX() : 0),
+					boundsY[index] + (type() > 0 ? relativeY() : 0)
+				);
 			}
 		}
 		return new Point(x, y);
@@ -132,8 +134,9 @@ public class Component extends Interactive {
 		}
 
 		final int uid = id() >>> 16;
-		for (final WidgetNode node : new HashTable<>(client.getWidgetTable(), WidgetNode.class)) {
-			if (node != null && uid == node.getUid()) {
+		HashTable<IWidgetNode> cache = new HashTable<>(ctx.client().get().getWidgetTable());
+		for (IWidgetNode node = cache.getHead(); node != null; node = cache.getNext()) {
+			if (uid == node.getUid()) {
 				return (int) node.getNodeId();
 			}
 		}
@@ -160,7 +163,7 @@ public class Component extends Interactive {
 			return new Component[0];
 		}
 		final Component[] comps = new Component[len];
-		for(int i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++) {
 			comps[i] = component(i);
 		}
 		return comps;
@@ -320,7 +323,7 @@ public class Component extends Interactive {
 	public boolean valid() {
 		final org.powerbot.bot.rt4.client.Widget internal = getInternal();
 		return internal != null && (component == null || component.visible()) &&
-				id() != -1 && internal.getBoundsIndex() != -1;
+			id() != -1 && internal.getBoundsIndex() != -1;
 	}
 
 	public boolean visible() {

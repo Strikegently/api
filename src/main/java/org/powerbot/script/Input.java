@@ -1,6 +1,7 @@
 package org.powerbot.script;
 
-import org.powerbot.bot.*;
+import org.powbot.input.MouseMovement;
+import org.powerbot.bot.AbstractMouseSpline;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -24,8 +25,12 @@ public abstract class Input {
 		blocking = new AtomicBoolean(false);
 		keyboard = new AtomicBoolean(false);
 		this.spline = spline;
-		speed = new AtomicInteger(translateToParisUnits(MINIMUM_SPEED));
+		speed = new AtomicInteger(MINIMUM_SPEED);
 	}
+
+	public abstract Rectangle inputBounds();
+
+	public abstract boolean isTargetInViewport(Point target);
 
 	/**
 	 * Returns the target component.
@@ -35,32 +40,12 @@ public abstract class Input {
 	public abstract Component getComponent();
 
 	/**
-	 * Takes a speed in paris units and returns the equivalent speed in percentage.
-	 *
-	 * @param s the speed in paris units.
-	 * @return the speed in percentage.
-	 */
-	private int translateFromParisUnits(int s) {
-		return (int) ((100 - speed.get()) / 0.9);
-	}
-
-	/**
-	 * Takes a percentage speed and returns the equivalent speed in paris units.
-	 *
-	 * @param s the speed in percentage.
-	 * @return the speed in paris units.
-	 */
-	private int translateToParisUnits(int s) {
-		return (int) Math.ceil(100 - (s * 0.9));
-	}
-
-	/**
 	 * Returns the current mouse speed.
 	 *
 	 * @return the current mouse speed.
 	 */
 	public int speed() {
-		return translateFromParisUnits(speed.get());
+		return speed.get();
 	}
 
 	/**
@@ -72,8 +57,7 @@ public abstract class Input {
 	 */
 	public int speed(final int s) {
 		if (s < MINIMUM_SPEED || s > MAXIMUM_SPEED) SpeedException.forSpeed(s);
-		int speedInParisUnits = translateToParisUnits(s);
-		speed.set(speedInParisUnits);
+		speed.set(s);
 		return speed();
 	}
 
@@ -142,7 +126,6 @@ public abstract class Input {
 	 * See {@link java.awt.event.KeyEvent} for the list of Virtual Keys.
 	 *
 	 * @param s the text to send
-	 *
 	 * @return whether or not the keys were successfully sent.
 	 */
 	public abstract boolean send(final String s);
@@ -152,9 +135,8 @@ public abstract class Input {
 	 * end. Virtual keys are also acceptable input, for example,
 	 * <code>{VK_ENTER}</code>.
 	 * See {@link java.awt.event.KeyEvent} for the list of Virtual Keys.
-	 * 
-	 * @param s the text to send
 	 *
+	 * @param s the text to send
 	 * @return whether or not the keys were successfully sent.
 	 */
 	public final boolean sendln(final String s) {
@@ -348,7 +330,8 @@ public abstract class Input {
 	 * successfully moved.
 	 */
 	public final boolean move(final int x, final int y) {
-		return move(new Point(x, y));
+		return move(new MouseMovement(() -> new Point(x, y), () -> true, (success) -> {
+		}, false));
 	}
 
 	/**
@@ -360,48 +343,15 @@ public abstract class Input {
 	 * successfully moved.
 	 */
 	public final boolean move(final Point p) {
-		return apply(
-				new Targetable() {
-					@Override
-					public Point nextPoint() {
-						return p;
-					}
-
-					@Override
-					public boolean contains(final Point point) {
-						return p.equals(point);
-					}
-				},
-				p::equals
-		);
+		return move(new MouseMovement(() -> p, () -> true, (success) -> {
+		}, false));
 	}
 
+	@Deprecated
 	public final boolean apply(final Targetable targetable, final Filter<Point> filter) {
-		final Point target_point = new Point(-1, -1);
-		final int STANDARD_ATTEMPTS = 3;
-		for (int i = 0; i < STANDARD_ATTEMPTS; i++) {
-			final Point mp = getLocation();
-			final Vector3 start = new Vector3(mp.x, mp.y, 255);
-			final Point p = targetable.nextPoint();
-			if (p.x == -1 || p.y == -1) {
-				continue;
-			}
-			target_point.move(p.x, p.y);
-			final Vector3 end = new Vector3(p.x, p.y, 0);
-			final Iterable<Vector3> spline = this.spline.getPath(start, end);
-			for (final Vector3 v : spline) {
-				if(Thread.interrupted()){
-					return false;
-				}
-				hop(v.x, v.y);
-				Condition.sleep((int) (this.spline.getAbsoluteDelay(v.z) * (speed.get() / 100d) / 1.33e6));
-			}
-			final Point p2 = getLocation(), ep = end.toPoint2D();
-			if (p2.equals(ep) && filter.accept(ep)) {
-				return true;
-			}
-		}
-		return false;
+		final Point targetPoint = targetable.nextPoint();
+		return move(new MouseMovement(() -> targetPoint, () -> true, (success) -> {
+		}, false));
 	}
 
 	/**
@@ -423,5 +373,24 @@ public abstract class Input {
 	 */
 	public abstract boolean scroll(final boolean down);
 
+	/**
+	 * Queues a {@link MouseMovement} and blocks until it's completed or cancelled
+	 *
+	 * @param command A mouse command
+	 * @return {@code true} if the command was successfully executed, otherwise {@code false}
+	 */
+	public abstract boolean move(MouseMovement command);
+
+	/**
+	 * Queues a {@link MouseMovement} to be completed asynchronously.
+	 * Use the onReached callback to perform an action once the target is reached
+	 *
+	 * @param command A mouse command
+	 */
+	public abstract void moveAsync(MouseMovement command);
+
+	public abstract boolean isTouchScreen();
+
 	public abstract Dimension getComponentSize();
+
 }

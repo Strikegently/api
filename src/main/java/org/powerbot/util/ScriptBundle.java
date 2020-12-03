@@ -1,6 +1,7 @@
 package org.powerbot.util;
 
-import org.powerbot.script.*;
+import org.powerbot.script.Script;
+import org.powerbot.script.StringUtils;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -28,10 +29,14 @@ public class ScriptBundle {
 		public boolean local = false, assigned = false;
 		public Type client;
 
-		public Definition(final Script.Manifest manifest) {
+		public Definition(final Script.Manifest manifest, final String id) {
 			name = manifest.name();
-			id = null;
 			description = manifest.description();
+			this.id = id;
+		}
+
+		public Definition(final Script.Manifest manifest) {
+			this(manifest, null);
 		}
 
 		Definition(final String name, final String id, final String description) {
@@ -49,7 +54,7 @@ public class ScriptBundle {
 		}
 
 		public String getID() {
-			return id == null ? "" : id;
+			return id == null ? getName() : id;
 		}
 
 		public String getDescription() {

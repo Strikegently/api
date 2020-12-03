@@ -57,6 +57,8 @@ public final class Constants {
 	public static final int BANK_QUANTITY_X = getInt("BANK_QUANTITY_X");
 	public static final int BANK_QUANTITY_ALL = getInt("BANK_QUANTITY_ALL");
 	public static final int BANKPIN_WIDGET = getInt("BANKPIN_WIDGET");
+	public static final int BANKPIN_PENDING_WIDGET = getInt("BANKPIN_PENDING_WIDGET");
+	public static final int BANKPIN_PENDING_COMPONENT = getInt("BANKPIN_PENDING_COMPONENT");
 	//varps don't change so we'll leave these
 	public static final int BANK_QUANTITY = 1666;
 	public static final int BANK_X_VALUE = 304;
@@ -194,7 +196,7 @@ public final class Constants {
 	public static final int COMBAT_OPTIONS_WIDGET = getInt("COMBAT_OPTIONS_WIDGET");
 
 	public static final String[] BANK_NPCS = {"Banker", "Ghost banker", "Banker tutor", "Sirsal Banker", "Nardah Banker", "Gnome banker", "Fadli", "Emerald Benedict", "Arnold Lydspor", "Cornelius", "Gundai", "Jade", "TzHaar-Ket-Yil", "TzHaar-Ket-Zuh", "Jumaane", "Magnus Gram", "Yusuf"};
-	public static final String[] BANK_CHESTS = {"Bank chest", "Bank Chest-wreck"};
+	public static final String[] BANK_CHESTS = {"Bank chest", "Bank Chest-wreck", "Open chest"};
 	public static final String[] BANK_BOOTHS = {"Bank booth"};
 	public static final Tile[] BANK_UNREACHABLES = new Tile[]{
 		new Tile(3187, 3446, 0), new Tile(3088, 3242, 0),

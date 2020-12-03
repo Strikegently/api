@@ -42,6 +42,8 @@ public interface IClient extends IGameEngine {
 
 	int getHintArrowY();
 
+	int getCurrentWorld();
+
 	ICache getItemConfigCache();
 
 	ILandscape getLandscape();
@@ -151,5 +153,7 @@ public interface IClient extends IGameEngine {
 	boolean isMenuOpen();
 
 	void setEventDispatcher(EventDispatcher dispatcher);
+
+	IPreferences getPreferences();
 
 }
